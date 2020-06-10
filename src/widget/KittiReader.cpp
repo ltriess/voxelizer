@@ -162,11 +162,15 @@ void KittiReader::readPoints(const std::string& filename, Laserscan& scan) {
   points.resize(num_points);
   remissions.resize(num_points);
 
+  std::cout << "NUM POINTS " << num_points << std::endl;
+
   for (uint32_t i = 0; i < num_points; ++i) {
     points[i].x = values[4 * i];
     points[i].y = values[4 * i + 1];
     points[i].z = values[4 * i + 2];
     remissions[i] = values[4 * i + 3];
+
+    std::cout << "point: " << points[i] << std::endl;
   }
 }
 

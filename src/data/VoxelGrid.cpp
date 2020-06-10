@@ -25,6 +25,7 @@ void VoxelGrid::initialize(float resolution, const Eigen::Vector4f& min, const E
 
   std::cout << "[Voxelgrid::initialize] " << resolution_ << "; num. voxels = [" << sizex_ << ", " << sizey_ << ", "
             << sizez_ << "], maxExtent = " << max.transpose() << ", minExtent" << min.transpose() << std::endl;
+  std::cout << "offset: " << offset_ << std::endl;
 }
 
 void VoxelGrid::clear() {
@@ -44,6 +45,7 @@ void VoxelGrid::clear() {
 
 void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label) {
   Eigen::Vector4f tp = p - offset_;
+  // std::cout << "Trying to insert " << p << std::endl;
   int32_t i = std::floor(tp.x() / resolution_);
   int32_t j = std::floor(tp.y() / resolution_);
   int32_t k = std::floor(tp.z() / resolution_);
@@ -52,7 +54,11 @@ void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label) {
   if ((i < 0) || (j < 0) || (k < 0)) return;
 
   int32_t gidx = index(i, j, k);
+  // make this an assertion. Cannot happen given the checks above.
   if (gidx < 0 || gidx >= int32_t(voxels_.size())) return;
+
+  std::cout << "INSERTING " << p.transpose() << " into " << i << ", " << j << ", " << k << " with label " << label << std::endl;
+
 
   if (voxels_[gidx].count == 0) occupied_.push_back(gidx);
 

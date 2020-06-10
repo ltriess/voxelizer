@@ -183,6 +183,10 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
     Eigen::Matrix4f ap = anchor_pose.inverse() * points[t]->pose;
 
     for (uint32_t i = 0; i < points[t]->points.size(); ++i) {
+
+      std::cout << "Point cloud " << t << " point " << i << std::endl;
+      std::cout << "config.minRange " << config.minRange << std::endl;
+
       const Point3f& pp = points[t]->points[i];
 
       float range = Eigen::Vector3f(pp.x, pp.y, pp.z).norm();
@@ -238,6 +242,7 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
         uint32_t maxLabel = 0;
 
         for (auto it = v.labels.begin(); it != v.labels.end(); ++it) {
+          std::cout << "Some label at: " << x << ", " << y << ", " << z << ": " << it->first << std::endl;
           if (it->second > maxCount) {
             maxCount = it->second;
             maxLabel = it->first;
@@ -245,10 +250,14 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
         }
 
         // Write maxLabel appropriately to file.
-        counter = counter + 1;
+
+        if(counter >= outputLabels.size()) {
+          throw std::runtime_error("xx");
+        }
         outputLabels[counter] = maxLabel;
         outputTensorOccluded[counter] = isOccluded;
         outputTensorInvalid[counter] = (uint32_t)grid.isInvalid(x, y, z);
+        counter = counter + 1;
       }
     }
   }

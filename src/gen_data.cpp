@@ -87,11 +87,15 @@ int32_t main(int32_t argc, char** argv) {
     float percentageLabeled = 100.0f * labelCount / pointCount;
 //    std::cout << percentageLabeled << "% points labeled." << std::endl;
 
+    std::cout << "percentage labeled " << percentageLabeled << std::endl;
+
     priorGrid.clear();
     pastGrid.clear();
 
     if (percentageLabeled > 0.0f) {
       Eigen::Matrix4f anchor_pose = priorPoints.back()->pose;
+
+      std::cout << "ANCHOR POSE: " << anchor_pose << std::endl;
 
 //      Stopwatch::tic();
       fillVoxelGrid(anchor_pose, priorPoints, priorLabels, priorGrid, config);
