@@ -12,6 +12,12 @@
 
 class Laserscan {
  public:
+
+  Laserscan() = delete;
+  Laserscan(uint32_t idx)
+  : idx_{idx} {
+  }
+
   void clear() {
     points.clear();
     remissions.clear();
@@ -22,6 +28,11 @@ class Laserscan {
   Eigen::Matrix4f pose;
   std::vector<Point3f> points;
   std::vector<float> remissions;
+
+  uint32_t getIdx() const { return idx_; }
+
+ private:
+  uint32_t idx_;
 };
 
 #endif /* SRC_DATA_POINTCLOUD_H_ */

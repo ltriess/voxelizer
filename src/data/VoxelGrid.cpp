@@ -1,6 +1,7 @@
 #include <data/VoxelGrid.h>
 
 #include <iostream>
+#include <cassert>
 
 void VoxelGrid::initialize(float resolution, const Eigen::Vector4f& min, const Eigen::Vector4f& max) {
   clear();
@@ -42,24 +43,40 @@ void VoxelGrid::clear() {
   //  occluded_.clear();
 }
 
-void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label) {
+void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_index) {
+  // p is already transformed into grid (anchored) coordinates
   Eigen::Vector4f tp = p - offset_;
   int32_t i = std::floor(tp.x() / resolution_);
   int32_t j = std::floor(tp.y() / resolution_);
   int32_t k = std::floor(tp.z() / resolution_);
 
-  if ((i >= int32_t(sizex_)) || (j >= int32_t(sizey_)) || (k >= int32_t(sizez_))) return;
-  if ((i < 0) || (j < 0) || (k < 0)) return;
+  if ((i >= int32_t(sizex_)) || (j >= int32_t(sizey_)) || (k >= int32_t(sizez_))) {
+    return;
+  }
+  if ((i < 0) || (j < 0) || (k < 0)) {
+    return;
+  }
 
   int32_t gidx = index(i, j, k);
-  if (gidx < 0 || gidx >= int32_t(voxels_.size())) return;
+  assert(!(gidx < 0 || gidx >= int32_t(voxels_.size())));
 
-  if (voxels_[gidx].count == 0) occupied_.push_back(gidx);
+  if (voxels_[gidx].count == 0) {
+    occupied_.push_back(gidx);
+  }
 
-  //    float n = voxels_[gidx].count;
+  // float n = voxels_[gidx].count;
   voxels_[gidx].labels[label] += 1;  //(1. / (n + 1)) * (n * voxels_[gidx].point + p);
   voxels_[gidx].count += 1;
   occlusionsValid_ = false;
+
+  // put every point into a map
+  const auto it = points_.find(scan_index);
+  if (it == points_.cend()) {
+    points_[scan_index] = std::vector<Eigen::Vector3f>{p.topRows<3>()};
+  }
+  else {
+    it->second.emplace_back(p.topRows<3>());
+  }
 }
 
 bool VoxelGrid::isOccluded(int32_t i, int32_t j, int32_t k) const { return occlusions_[index(i, j, k)] > -1; }

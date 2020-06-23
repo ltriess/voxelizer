@@ -182,6 +182,8 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
   for (uint32_t t = 0; t < points.size(); ++t) {
     Eigen::Matrix4f ap = anchor_pose.inverse() * points[t]->pose;
 
+    const auto scan_index = points[t]->getIdx();
+
     for (uint32_t i = 0; i < points[t]->points.size(); ++i) {
       const Point3f& pp = points[t]->points[i];
 
@@ -190,13 +192,16 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
       bool is_car_point = (config.hidecar && pp.x < 3.0 && pp.x > -2.0 && std::abs(pp.y) < 2.0);
       if (is_car_point) continue;
 
+      // transform individual point into anchor coordinate system
       Eigen::Vector4f p = ap * Eigen::Vector4f(pp.x, pp.y, pp.z, 1);
 
       uint32_t label = (*labels[t])[i];
-      if (mappedLabels.find(label) != mappedLabels.end()) label = mappedLabels[label];
+      if (mappedLabels.find(label) != mappedLabels.end()) {
+        label = mappedLabels[label];
+      }
 
       if (std::find(config.filteredLabels.begin(), config.filteredLabels.end(), label) == config.filteredLabels.end()) {
-        grid.insert(p, (*labels[t])[i]);
+        grid.insert(p, (*labels[t])[i], scan_index);
       }
     }
   }

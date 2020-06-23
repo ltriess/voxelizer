@@ -11,6 +11,8 @@
 #include "rv/string_utils.h"
 #include "widget/KittiReader.h"
 
+#include "example.pb.h"
+
 using namespace rv;
 
 float poseDistance(const Eigen::Matrix4f& A, const Eigen::Matrix4f& B) {
@@ -18,6 +20,9 @@ float poseDistance(const Eigen::Matrix4f& A, const Eigen::Matrix4f& B) {
 }
 
 int32_t main(int32_t argc, char** argv) {
+
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
   if (argc < 4) {
     std::cout << "Too few arguments" << std::endl;
     std::cout << "Usage: ./gen_data <config> <sequence-dirname> <input-label-dirname> <output-voxel-dirname>"

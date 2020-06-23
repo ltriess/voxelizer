@@ -4,6 +4,7 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 /** \brief simple Voxelgrid data structure with a label historgram per voxel.
@@ -32,7 +33,7 @@ class VoxelGrid {
   void clear();
 
   /** \brief add label for specific point to voxel grid **/
-  void insert(const Eigen::Vector4f& p, uint32_t label);
+  void insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_index);
   /** \brief get  all voxels. **/
   const std::vector<Voxel>& voxels() const { return voxels_; }
 
@@ -123,6 +124,8 @@ class VoxelGrid {
   uint32_t sizex_, sizey_, sizez_;
   std::vector<Voxel> voxels_;
   std::vector<uint32_t> occupied_;
+
+  std::unordered_map<uint32_t, std::vector<Eigen::Vector3f>> points_;
 
   Eigen::Vector4f offset_;
 

@@ -60,10 +60,14 @@ void KittiReader::retrieve(int32_t idx, std::vector<PointcloudPtr>& priorPoints,
   pastPoints.clear();
   pastLabels.clear();
 
-  if (idx >= int32_t(velodyne_filenames_.size()) || idx < 0) return;
+  if (idx >= int32_t(velodyne_filenames_.size()) || idx < 0) {
+    return;
+  }
 
   std::vector<int32_t> indexesBefore;
-  for (auto it = pointsCache_.begin(); it != pointsCache_.end(); ++it) indexesBefore.push_back(it->first);
+  for (auto it = pointsCache_.begin(); it != pointsCache_.end(); ++it) {
+    indexesBefore.push_back(it->first);
+  }
   std::vector<int32_t> indexesAfter;
 
   uint32_t scansRead = 0;
@@ -73,7 +77,7 @@ void KittiReader::retrieve(int32_t idx, std::vector<PointcloudPtr>& priorPoints,
     if (pointsCache_.find(t) == pointsCache_.end()) {
       scansRead += 1;
 
-      priorPoints.push_back(std::shared_ptr<Laserscan>(new Laserscan));
+      priorPoints.push_back(std::shared_ptr<Laserscan>(new Laserscan{t}));
       readPoints(velodyne_filenames_[t], *priorPoints.back());
       pointsCache_[t] = priorPoints.back();
       priorPoints.back()->pose = poses_[t];
@@ -102,7 +106,7 @@ void KittiReader::retrieve(int32_t idx, std::vector<PointcloudPtr>& priorPoints,
     if (pointsCache_.find(t) == pointsCache_.end()) {
       scansRead += 1;
 
-      pastPoints.push_back(std::shared_ptr<Laserscan>(new Laserscan));
+      pastPoints.push_back(std::shared_ptr<Laserscan>(new Laserscan{t}));
       readPoints(velodyne_filenames_[t], *pastPoints.back());
       pointsCache_[t] = pastPoints.back();
       pastPoints.back()->pose = poses_[t];
