@@ -76,7 +76,8 @@ add_executable(voxelizer
   src/widget/Viewport.cpp
   src/widget/KittiReader.cpp
   src/data/voxelize_utils.cpp
-
+  src/data/example.pb.cc
+  src/data/feature.pb.cc
 )
 
 add_executable(gen_data 
@@ -90,8 +91,11 @@ add_executable(gen_data
 
   src/widget/KittiReader.cpp
   src/data/voxelize_utils.cpp
+
+  src/data/example.pb.cc
+  src/data/feature.pb.cc
 )
 
-target_link_libraries(voxelizer ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} pthread Qt5::Xml Qt5::OpenGL Qt5::Widgets)
+target_link_libraries(voxelizer ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} pthread Qt5::Xml Qt5::OpenGL Qt5::Widgets ${PROTOBUF_LIBRARY})
 target_link_libraries(gen_data ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} pthread Qt5::Xml Qt5::OpenGL Qt5::Widgets ${PROTOBUF_LIBRARY})
 

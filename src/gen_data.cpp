@@ -11,8 +11,6 @@
 #include "rv/string_utils.h"
 #include "widget/KittiReader.h"
 
-#include "example.pb.h"
-
 using namespace rv;
 
 float poseDistance(const Eigen::Matrix4f& A, const Eigen::Matrix4f& B) {
@@ -122,7 +120,6 @@ int32_t main(int32_t argc, char** argv) {
       }
 //      std::cout << "update invalid took " << Stopwatch::toc() << std::endl;
 
-      // store grid in mat file.
       saveVoxelGrid(priorGrid, output_voxel_dirname, outname.str(), "input");
       saveVoxelGrid(pastGrid, output_voxel_dirname, outname.str(), "target");
 

@@ -184,6 +184,8 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
 
     const auto scan_index = points[t]->getIdx();
 
+    grid.addTransform(scan_index, ap);
+
     for (uint32_t i = 0; i < points[t]->points.size(); ++i) {
       const Point3f& pp = points[t]->points[i];
 
@@ -287,6 +289,9 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
       out.close();
     }
 
+    // write accumulated points
+    saveAccumulatedPoints(grid, directory + "/" + basename + "_points.tfrecord");
+
   } else {
     // for input we just generate the ".bin" file.
     {
@@ -298,4 +303,116 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
       out.close();
     }
   }
+}
+
+void add_transform_matrices(
+    ::tensorflow::Features *features,
+    const std::vector<Eigen::Matrix4f> &transform_matrices,
+    const std::string &key) {
+  // Eigen has column major matrix storage. Write float values as row major!
+  auto *float_list = new tensorflow::FloatList{};
+  for (const auto &matrix : transform_matrices) {
+    const Eigen::Matrix<float, 4, 4, Eigen::RowMajor> m_row_major(matrix);
+    for (uint32_t i = 0;
+         i < m_row_major.size(); i++) {
+      float_list->add_value(m_row_major.data()[i]);
+    }
+  }
+
+  ::tensorflow::Feature feature{};
+  feature.set_allocated_float_list(float_list);
+  assert(feature.has_float_list());
+
+  google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry(
+      key, feature);
+  features->mutable_feature()->insert(map_entry);
+}
+
+void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
+  const VoxelGrid::PointMap& points = grid.getPointMap();
+  const VoxelGrid::TransformMap& tfs = grid.getTransformMap();
+
+  // get all keys = cloud idx
+  std::vector<uint32_t> keys{};
+  keys.reserve(points.size());
+  std::transform(points.cbegin(), points.cend(), std::back_inserter(keys),
+      [](const VoxelGrid::PointMap::value_type& pair){return pair.first;});
+
+  std::sort(keys.begin(), keys.end());
+  uint32_t point_counter = 0;
+
+  std::cout << "Minimal point index: " << keys.front() << "\nMaximal point index: " << keys.back() << std::endl;
+
+  tensorflow::Example example{};
+  auto *features = new ::tensorflow::Features{};
+
+  std::vector<Eigen::Matrix4f> tfs_vector{};
+  for (auto idx = keys.front(); idx <= keys.back(); ++idx) {
+    const auto it = tfs.find(idx);
+    if (it != tfs.cend()) {
+      tfs_vector.emplace_back(it->second);
+    }
+    else {
+      tfs_vector.emplace_back(Eigen::Matrix4f::Constant(std::numeric_limits<float>::quiet_NaN()));
+    }
+  }
+  add_transform_matrices(features, tfs_vector, "transforms");
+
+  // Eigen has column major matrix storage. Write float values as row major!
+  auto *float_list = new tensorflow::FloatList{};
+  auto *split_list = new tensorflow::Int64List{};
+
+  auto *min_max = new tensorflow::Int64List{};
+  min_max->add_value(keys.front());
+  min_max->add_value(keys.back() + 1);
+
+  for (auto idx = keys.front(); idx <= keys.back(); ++idx) {
+
+    const auto it = points.find(idx);
+    if (it != points.cend()) {
+      const auto& point_list = it->second;
+
+      for (const auto& p : point_list) {
+        float_list->add_value(p[0]);
+        float_list->add_value(p[1]);
+        float_list->add_value(p[2]);
+      }
+
+      point_counter += point_list.size();
+    }
+    split_list->add_value(static_cast<int64_t>(point_counter));
+
+  }
+  {
+    ::tensorflow::Feature feature{};
+    feature.set_allocated_float_list(float_list);
+    assert(feature.has_float_list());
+
+    google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry("points", feature);
+    features->mutable_feature()->insert(map_entry);
+  }
+  {
+    ::tensorflow::Feature feature{};
+    feature.set_allocated_int64_list(split_list);
+    assert(feature.has_int64_list());
+
+    google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry("splits", feature);
+    features->mutable_feature()->insert(map_entry);
+  }
+  {
+    ::tensorflow::Feature feature{};
+    feature.set_allocated_int64_list(min_max);
+    assert(feature.has_int64_list());
+
+    google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry("scan_idx_min_max", feature);
+    features->mutable_feature()->insert(map_entry);
+  }
+
+  example.set_allocated_features(features);
+  std::fstream output(filename.c_str(),
+                      std::ios::out | std::ios::trunc | std::ios::binary);
+  if (!example.SerializeToOstream(&output)) {
+    std::cerr << "Failed to write protobuf." << std::endl;
+  }
+
 }

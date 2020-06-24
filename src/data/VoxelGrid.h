@@ -17,6 +17,10 @@
 
 class VoxelGrid {
  public:
+
+  using PointMap = std::unordered_map<uint32_t, std::vector<Eigen::Vector3f>>;
+  using TransformMap = std::unordered_map<uint32_t, Eigen::Matrix4f>;
+
   class Voxel {
    public:
     std::map<uint32_t, uint32_t> labels;
@@ -118,6 +122,12 @@ class VoxelGrid {
     return i + j * sizex_ + k * sizex_ * sizey_;
   }
 
+  const PointMap& getPointMap() const { return points_; }
+  void addTransform(uint32_t idx, const Eigen::Matrix4f& tf) {
+    transforms_[idx] = tf;
+  }
+  const TransformMap& getTransformMap() const { return transforms_; }
+
  protected:
   float resolution_;
 
@@ -125,7 +135,8 @@ class VoxelGrid {
   std::vector<Voxel> voxels_;
   std::vector<uint32_t> occupied_;
 
-  std::unordered_map<uint32_t, std::vector<Eigen::Vector3f>> points_;
+  PointMap points_;
+  TransformMap transforms_;
 
   Eigen::Vector4f offset_;
 

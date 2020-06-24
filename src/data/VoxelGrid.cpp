@@ -41,6 +41,8 @@ void VoxelGrid::clear() {
 
   occupied_.clear();
   //  occluded_.clear();
+
+  points_.clear();
 }
 
 void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_index) {

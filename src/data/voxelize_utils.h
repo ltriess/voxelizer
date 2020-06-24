@@ -4,6 +4,7 @@
 #include "Pointcloud.h"
 #include "VoxelGrid.h"
 #include "common.h"
+#include "example.pb.h"
 
 class Config {
  public:
@@ -46,5 +47,7 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
  **/
 void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const std::string& basename,
                    const std::string& mode = "input");
+
+void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename);
 
 #endif /* SRC_DATA_VOXELIZE_UTILS_H_ */
