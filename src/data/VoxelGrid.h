@@ -24,7 +24,10 @@ class VoxelGrid {
   class Voxel {
    public:
     std::map<uint32_t, uint32_t> labels;
+    PointMap points_;
     uint32_t count{0};
+
+    void filterPoints();
   };
 
   /** \brief set parameters of voxel grid and compute internal offsets,  etc. **/
@@ -128,6 +131,8 @@ class VoxelGrid {
   }
   const TransformMap& getTransformMap() const { return transforms_; }
 
+  void filterAndMergePoints();
+
  protected:
   float resolution_;
 
@@ -135,7 +140,10 @@ class VoxelGrid {
   std::vector<Voxel> voxels_;
   std::vector<uint32_t> occupied_;
 
-  PointMap points_;
+  // will be poplulated only by calling filterAndMergePoints
+  PointMap points_{};
+  uint32_t point_count_;
+
   TransformMap transforms_;
 
   Eigen::Vector4f offset_;

@@ -1,7 +1,12 @@
 #include <data/VoxelGrid.h>
 
 #include <iostream>
+#include <numeric>
+#include <random>
+
+#undef NDEBUG
 #include <cassert>
+
 
 void VoxelGrid::initialize(float resolution, const Eigen::Vector4f& min, const Eigen::Vector4f& max) {
   clear();
@@ -32,6 +37,7 @@ void VoxelGrid::clear() {
   for (auto idx : occupied_) {
     voxels_[idx].count = 0;
     voxels_[idx].labels.clear();
+    voxels_[idx].points_.clear();
   }
 
   //  for (auto idx : occluded_) {
@@ -43,6 +49,7 @@ void VoxelGrid::clear() {
   //  occluded_.clear();
 
   points_.clear();
+  point_count_ = 0;
 }
 
 void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_index) {
@@ -72,13 +79,88 @@ void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_i
   occlusionsValid_ = false;
 
   // put every point into a map
-  const auto it = points_.find(scan_index);
-  if (it == points_.cend()) {
-    points_[scan_index] = std::vector<Eigen::Vector3f>{p.topRows<3>()};
+  auto& points = voxels_[gidx].points_;
+  const auto it = points.find(scan_index);
+  if (it == points.cend()) {
+    points[scan_index] = std::vector<Eigen::Vector3f>{p.topRows<3>()};
   }
   else {
     it->second.emplace_back(p.topRows<3>());
   }
+}
+
+void VoxelGrid::filterAndMergePoints() {
+  // filter each voxel individually
+  for (auto idx : occupied_) {
+    voxels_[idx].filterPoints();
+  }
+
+  point_count_ = 0;
+
+  // merge all voxels scan-wise
+  for (auto idx : occupied_) {
+    for (auto points : voxels_[idx].points_) {
+      const auto it = points_.find(points.first);
+      if (it == points_.end()) {
+        points_[points.first] = points.second;
+      }
+      else {
+        it->second.insert(it->second.end(), points.second.begin(), points.second.end());
+      }
+      point_count_ += points.second.size();
+    }
+  }
+
+  std::cout << "Point count: " << point_count_ << std::endl;
+}
+
+void VoxelGrid::Voxel::filterPoints() {
+  const uint32_t max_points = 15;
+  const uint32_t num_frames = points_.size();
+
+  // create vector of <count, key> pairs to sort them by counts (descending)
+  std::vector<std::pair<uint32_t, uint32_t>> counts = {};
+  counts.reserve(points_.size());
+  std::transform(points_.begin(), points_.end(), std::back_inserter(counts),
+      [](const VoxelGrid::PointMap::value_type& x){return std::make_pair(x.second.size(), x.first);});
+  std::sort(counts.begin(), counts.end());
+
+  std::random_device rd{};
+  std::mt19937 g(rd());
+
+  auto remaining_points = max_points;
+  uint32_t checksum_points = 0;
+
+  for (std::size_t i = 0; i < counts.size(); ++i) {
+
+    const auto base_new = remaining_points / (num_frames - i);
+    const auto remainder = remaining_points % (num_frames - i);
+
+    const auto target = remainder > 0 ? base_new + 1 : base_new;
+    const auto c = counts[i].first;
+
+    if (c <= target) {
+      remaining_points -= c;
+      checksum_points += c;
+    }
+    else {
+      remaining_points -= target;
+
+      if (c > target) {
+        auto& points = points_[counts[i].second];
+        std::shuffle(points.begin(), points.end(), g);
+        points.erase(points.begin() + target, points.end());
+        points.shrink_to_fit();
+        checksum_points += points.size();
+      }
+      else {
+        // target == c
+        checksum_points += c;
+      }
+    }
+  }
+
+  assert(checksum_points == std::min(max_points, count));
 }
 
 bool VoxelGrid::isOccluded(int32_t i, int32_t j, int32_t k) const { return occlusions_[index(i, j, k)] > -1; }

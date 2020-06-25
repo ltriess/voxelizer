@@ -332,6 +332,10 @@ void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
   const VoxelGrid::PointMap& points = grid.getPointMap();
   const VoxelGrid::TransformMap& tfs = grid.getTransformMap();
 
+  if (points.empty()) {
+    return;
+  }
+
   // get all keys = cloud idx
   std::vector<uint32_t> keys{};
   keys.reserve(points.size());

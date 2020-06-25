@@ -94,7 +94,7 @@ int32_t main(int32_t argc, char** argv) {
     pastGrid.clear();
 
     if (percentageLabeled > 0.0f) {
-      Eigen::Matrix4f anchor_pose = priorPoints.back()->pose;
+      const Eigen::Matrix4f anchor_pose = priorPoints.back()->pose;
 
 //      Stopwatch::tic();
       fillVoxelGrid(anchor_pose, priorPoints, priorLabels, priorGrid, config);
@@ -105,6 +105,10 @@ int32_t main(int32_t argc, char** argv) {
 //      Stopwatch::tic();
       priorGrid.updateOcclusions();
       pastGrid.updateOcclusions();
+
+      priorGrid.filterAndMergePoints();
+      pastGrid.filterAndMergePoints();
+
 //      std::cout << "update occlusions took " << Stopwatch::toc() << std::endl;
 
       //# Fill voxels from ground
