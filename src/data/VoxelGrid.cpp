@@ -82,10 +82,10 @@ void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_i
   auto& points = voxels_[gidx].points_;
   const auto it = points.find(scan_index);
   if (it == points.cend()) {
-    points[scan_index] = std::vector<Eigen::Vector3f>{p.topRows<3>()};
+    points[scan_index] = std::vector<PointLabel>{{p.topRows<3>(), label}};
   }
   else {
-    it->second.emplace_back(p.topRows<3>());
+    it->second.emplace_back(p.topRows<3>(), label);
   }
 }
 
@@ -115,7 +115,7 @@ void VoxelGrid::filterAndMergePoints() {
 }
 
 void VoxelGrid::Voxel::filterPoints() {
-  const uint32_t max_points = 15;
+  const uint32_t max_points = 10;
   const uint32_t num_frames = points_.size();
 
   // create vector of <count, key> pairs to sort them by counts (descending)

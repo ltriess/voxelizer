@@ -18,7 +18,13 @@
 class VoxelGrid {
  public:
 
-  using PointMap = std::unordered_map<uint32_t, std::vector<Eigen::Vector3f>>;
+  struct PointLabel {
+    PointLabel(Eigen::Vector3f point, uint32_t label) : point(point), label(label) {}
+    Eigen::Vector3f point;
+    uint32_t label;
+  };
+
+  using PointMap = std::unordered_map<uint32_t, std::vector<PointLabel>>;
   using TransformMap = std::unordered_map<uint32_t, Eigen::Matrix4f>;
 
   class Voxel {
@@ -132,6 +138,8 @@ class VoxelGrid {
   const TransformMap& getTransformMap() const { return transforms_; }
 
   void filterAndMergePoints();
+
+  uint32_t getPointCount() const {return point_count_;}
 
  protected:
   float resolution_;

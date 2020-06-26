@@ -365,10 +365,15 @@ void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
   // Eigen has column major matrix storage. Write float values as row major!
   auto *float_list = new tensorflow::FloatList{};
   auto *split_list = new tensorflow::Int64List{};
+  auto *label_bytes = new tensorflow::BytesList{};
 
   auto *min_max = new tensorflow::Int64List{};
   min_max->add_value(keys.front());
   min_max->add_value(keys.back() + 1);
+
+  std::string label_string{};
+  label_string.reserve(grid.getPointCount() * 2);
+  uint32_t counter = 0;
 
   for (auto idx = keys.front(); idx <= keys.back(); ++idx) {
 
@@ -377,9 +382,14 @@ void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
       const auto& point_list = it->second;
 
       for (const auto& p : point_list) {
-        float_list->add_value(p[0]);
-        float_list->add_value(p[1]);
-        float_list->add_value(p[2]);
+        float_list->add_value(p.point[0]);
+        float_list->add_value(p.point[1]);
+        float_list->add_value(p.point[2]);
+        // label are lower 2 bytes of uint32 label.
+        const uint16_t l = p.label & 0xFFFF;
+        label_string.push_back(static_cast<char>(l & 0x00FF));
+        label_string.push_back(static_cast<char>(l >> 8));
+        ++counter;
       }
 
       point_counter += point_list.size();
@@ -387,6 +397,10 @@ void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
     split_list->add_value(static_cast<int64_t>(point_counter));
 
   }
+
+  assert(counter == grid.getPointCount());
+  label_bytes->add_value(label_string.c_str(), grid.getPointCount() * 2);
+
   {
     ::tensorflow::Feature feature{};
     feature.set_allocated_float_list(float_list);
@@ -401,6 +415,14 @@ void saveAccumulatedPoints(const VoxelGrid& grid, const std::string& filename) {
     assert(feature.has_int64_list());
 
     google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry("splits", feature);
+    features->mutable_feature()->insert(map_entry);
+  }
+  {
+    ::tensorflow::Feature feature{};
+    feature.set_allocated_bytes_list(label_bytes);
+    assert(feature.has_bytes_list());
+
+    google::protobuf::MapPair<::std::string, ::tensorflow::Feature> map_entry("labels", feature);
     features->mutable_feature()->insert(map_entry);
   }
   {
