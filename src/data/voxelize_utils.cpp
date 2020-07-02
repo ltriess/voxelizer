@@ -72,7 +72,7 @@ std::vector<std::string> parseList(std::string str) {
 }
 
 Config parseConfiguration(const std::string& filename) {
-  Config config;
+  Config config{};
   std::ifstream in(filename);
 
   if (!in.is_open()) return config;
@@ -167,6 +167,8 @@ Config parseConfiguration(const std::string& filename) {
 
   in.close();
 
+  config.ignored_label_set.insert(config.filteredLabels.cbegin(), config.filteredLabels.cend());
+
   return config;
 }
 
@@ -202,9 +204,14 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
         label = mappedLabels[label];
       }
 
-      if (std::find(config.filteredLabels.begin(), config.filteredLabels.end(), label) == config.filteredLabels.end()) {
+      // Todo my static points ignore but-not-on-first-frame hack
+      if (grid.ignoresDisabled() || config.ignored_label_set.find(label) == config.ignored_label_set.cend()){
         grid.insert(p, (*labels[t])[i], scan_index);
       }
+
+//      if (std::find(config.filteredLabels.begin(), config.filteredLabels.end(), label) == config.filteredLabels.end()) {
+//        grid.insert(p, (*labels[t])[i], scan_index);
+//      }
     }
   }
 }

@@ -53,8 +53,9 @@ int32_t main(int32_t argc, char** argv) {
   reader.setNumPriorScans(config.priorScans);
   reader.setNumPastScans(config.pastScans);
 
-  VoxelGrid priorGrid;
-  VoxelGrid pastGrid;
+  VoxelGrid priorGrid{};
+  VoxelGrid pastGrid{};
+  priorGrid.setDisableIgnores(true);
 
   priorGrid.initialize(config.voxelSize, config.minExtent, config.maxExtent);
   pastGrid.initialize(config.voxelSize, config.minExtent, config.maxExtent);
@@ -97,8 +98,16 @@ int32_t main(int32_t argc, char** argv) {
       const Eigen::Matrix4f anchor_pose = priorPoints.back()->pose;
 
 //      Stopwatch::tic();
+
+      // let's see if this condition holds
+      assert(priorPoints.size() == 1);
+
       fillVoxelGrid(anchor_pose, priorPoints, priorLabels, priorGrid, config);
+      // Todo: just copy priorGrid into pastGrid?
+      pastGrid.setDisableIgnores(true);
       fillVoxelGrid(anchor_pose, priorPoints, priorLabels, pastGrid, config);
+      pastGrid.setDisableIgnores(false);
+
       fillVoxelGrid(anchor_pose, pastPoints, pastLabels, pastGrid, config);
 //      std::cout << "fill voxelgrid took " << Stopwatch::toc() << std::endl;
 

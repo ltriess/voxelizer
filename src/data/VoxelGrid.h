@@ -36,6 +36,8 @@ class VoxelGrid {
     void filterPoints();
   };
 
+  VoxelGrid() : disable_ignores_{false} {}
+
   /** \brief set parameters of voxel grid and compute internal offsets,  etc. **/
   void initialize(float resolution, const Eigen::Vector4f& min, const Eigen::Vector4f& max);
 
@@ -141,7 +143,14 @@ class VoxelGrid {
 
   uint32_t getPointCount() const {return point_count_;}
 
+  bool ignoresDisabled() const noexcept { return disable_ignores_; }
+  void setDisableIgnores(bool disable) noexcept { disable_ignores_ = disable; }
+
  protected:
+
+  // using this to determine if moving points should be filtered out.
+  bool disable_ignores_;
+
   float resolution_;
 
   uint32_t sizex_, sizey_, sizez_;

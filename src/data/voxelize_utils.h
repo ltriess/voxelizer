@@ -6,6 +6,8 @@
 #include "common.h"
 #include "example.pb.h"
 
+#include <unordered_set>
+
 class Config {
  public:
   float voxelSize{0.5};                                       // size of a voxel
@@ -20,6 +22,8 @@ class Config {
   float minRange{2.5f};      // minimum distance of laser points to consider.
   float maxRange{25.0f};     // maximum distance of laser points to consider.
   std::vector<uint32_t> filteredLabels;                    // ignored labels
+  std::unordered_set<uint32_t> ignored_label_set;
+
   std::map<uint32_t, std::vector<uint32_t>> joinedLabels;  // labels that get joined into a specific class.
 
   // gen_data specific values.
