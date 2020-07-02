@@ -199,7 +199,6 @@ void VoxelGrid::insertOcclusionLabels() {
 void VoxelGrid::updateOcclusions() {
   std::fill(occludedBy_.begin(), occludedBy_.end(), -2);
   std::fill(occlusions_.begin(), occlusions_.end(), -1);
-  uint32_t occludedByCalls = 0;
 
   // move from outer to inner voxels.
   uint32_t num_shells = std::min<uint32_t>(sizex_, std::ceil(0.5 * sizey_));
@@ -211,7 +210,6 @@ void VoxelGrid::updateOcclusions() {
       for (uint32_t k = 0; k < sizez_; ++k) {
         int32_t idx = index(i, j, k);
         if (occludedBy_[idx] == -2) {
-          occludedByCalls += 1;
           occludedBy_[idx] = occludedBy(i, j, k);
         }
         occlusions_[idx] = occludedBy_[idx];
@@ -224,7 +222,6 @@ void VoxelGrid::updateOcclusions() {
       for (uint32_t k = 0; k < sizez_; ++k) {
         int32_t idx = index(i, j, k);
         if (occludedBy_[idx] == -2) {
-          occludedByCalls += 1;
           occludedBy_[idx] = occludedBy(i, j, k);
         }
         occlusions_[idx] = occludedBy_[idx];
@@ -237,7 +234,6 @@ void VoxelGrid::updateOcclusions() {
       for (uint32_t k = 0; k < sizez_; ++k) {
         int32_t idx = index(i, j, k);
         if (occludedBy_[idx] == -2) {
-          occludedByCalls += 1;
           occludedBy_[idx] = occludedBy(i, j, k);
         }
         occlusions_[idx] = occludedBy_[idx];
@@ -265,14 +261,14 @@ void VoxelGrid::updateOcclusions() {
   //    }
   //  }
 
-  //  std::cout << "occludedBy called " << occludedByCalls << " times." << std::endl;
-
   invalid_ = occlusions_;
   occlusionsValid_ = true;
 }
 
 void VoxelGrid::updateInvalid(const Eigen::Vector3f& position) {
-  if (!occlusionsValid_) updateOcclusions();
+  if (!occlusionsValid_) {
+    updateOcclusions();
+  }
 
   std::fill(occludedBy_.begin(), occludedBy_.end(), -2);
 
