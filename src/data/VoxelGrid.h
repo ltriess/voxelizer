@@ -83,6 +83,9 @@ class VoxelGrid {
    *
    *  \see updateOcclusions
    **/
+
+  int32_t getOcclusion(uint32_t idx) const { return occlusions_[idx];}
+
   bool isFree(int32_t i, int32_t j, int32_t k) const;
 
   /** \brief get if voxel at (i,j,k) is invalid.
@@ -153,6 +156,7 @@ class VoxelGrid {
 
   float resolution_;
 
+  // dangerous pointer access of sizey, sizez in size() method. DO NOT CHANGE ORDER.
   uint32_t sizex_, sizey_, sizez_;
   std::vector<Voxel> voxels_;
   std::vector<uint32_t> occupied_;

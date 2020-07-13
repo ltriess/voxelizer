@@ -3,6 +3,11 @@
 #include <rv/string_utils.h>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
+#include <unordered_set>
+
+#undef NDEBUG
+#include <cassert>
+
 
 using namespace rv;
 
@@ -204,7 +209,7 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
         label = mappedLabels[label];
       }
 
-      // Todo my static points ignore but-not-on-first-frame hack
+      // Todo: static points ignore but-not-on-first-frame hack
       if (grid.ignoresDisabled() || config.ignored_label_set.find(label) == config.ignored_label_set.cend()){
         grid.insert(p, (*labels[t])[i], scan_index);
       }
@@ -239,6 +244,7 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
   std::vector<uint16_t> outputLabels(numElements, 0);
   std::vector<uint32_t> outputTensorOccluded(numElements, 0);
   std::vector<uint32_t> outputTensorInvalid(numElements, 0);
+  std::vector<uint32_t> outputTensorDynamicOcclusions(numElements, 0);
 
   int32_t counter = 0;
   for (uint32_t x = 0; x < Nx; ++x) {
@@ -300,12 +306,46 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
     saveAccumulatedPoints(grid, directory + "/" + basename + "_points.tfrecord");
 
   } else {
+
+    std::unordered_set<uint16_t> dynamic_labels{252, 253, 254, 255, 256, 257, 258, 259};
+
+    int32_t counter = 0;
+    for (uint32_t x = 0; x < Nx; ++x) {
+      for (uint32_t y = 0; y < Ny; ++y) {
+        for (uint32_t z = 0; z < Nz; ++z) {
+          
+          const auto idx = grid.index(x, y, z);
+
+          const int32_t occlusion_index = grid.getOcclusion(idx);
+          if (occlusion_index >= 0) {
+            assert(occlusion_index < numElements);
+            const uint16_t occlusion_label = outputLabels[occlusion_index];
+
+            outputTensorDynamicOcclusions[counter] =
+                static_cast<uint32_t>(dynamic_labels.find(occlusion_label) != dynamic_labels.end());
+          }
+
+          assert(counter < numElements);
+          ++counter;
+        }
+      }
+    }
+
     // for input we just generate the ".bin" file.
     {
       std::string output_filename = directory + "/" + basename + ".bin";
 
       std::ofstream out(output_filename.c_str());
       std::vector<uint8_t> packed = pack(outputLabels);
+      out.write((const char*)&packed[0], packed.size() * sizeof(uint8_t));
+      out.close();
+    }
+
+    {
+      std::string output_filename = directory + "/" + basename + ".dynamic_occlusion";
+
+      std::ofstream out(output_filename.c_str());
+      std::vector<uint8_t> packed = pack(outputTensorDynamicOcclusions);
       out.write((const char*)&packed[0], packed.size() * sizeof(uint8_t));
       out.close();
     }
