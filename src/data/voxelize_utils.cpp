@@ -183,6 +183,7 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
   for (auto joins : config.joinedLabels) {
     for (auto label : joins.second) {
       mappedLabels[label] = joins.first;
+      std::cout << "Mapping label " << label << " -> " << joins.first << std::endl;
     }
   }
 
@@ -209,7 +210,7 @@ void fillVoxelGrid(const Eigen::Matrix4f& anchor_pose, const std::vector<Pointcl
         label = mappedLabels[label];
       }
 
-      // Todo: static points ignore but-not-on-first-frame hack
+      // Todo: dynamic points ignore but-not-on-first-frame hack
       if (grid.ignoresDisabled() || config.ignored_label_set.find(label) == config.ignored_label_set.cend()){
         grid.insert(p, (*labels[t])[i], scan_index);
       }
@@ -241,12 +242,15 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
   uint32_t Nz = grid.size(2);
 
   size_t numElements = grid.num_elements();
+  std::vector<uint16_t> labels_indexed(numElements, 0);
   std::vector<uint16_t> outputLabels(numElements, 0);
   std::vector<uint32_t> outputTensorOccluded(numElements, 0);
   std::vector<uint32_t> outputTensorInvalid(numElements, 0);
   std::vector<uint32_t> outputTensorDynamicOcclusions(numElements, 0);
 
   int32_t counter = 0;
+  int32_t moving_counter_global = 0;
+
   for (uint32_t x = 0; x < Nx; ++x) {
     for (uint32_t y = 0; y < Ny; ++y) {
       for (uint32_t z = 0; z < Nz; ++z) {
@@ -255,7 +259,7 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
         uint32_t isOccluded = (uint32_t)grid.isOccluded(x, y, z);
 
         uint32_t maxCount = 0;
-        uint32_t maxLabel = 0;
+        uint16_t maxLabel = 0;
 
         for (auto it = v.labels.begin(); it != v.labels.end(); ++it) {
           if (it->second > maxCount) {
@@ -264,12 +268,21 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
           }
         }
 
+        if (maxLabel >= 252) {
+          ++moving_counter_global;
+        }
+
+        // index != counter (!)
+        const auto index = grid.index(x, y, z);
+        labels_indexed[index] = maxLabel;
+
         // Write maxLabel appropriately to file.
         assert(counter < numElements);
         outputLabels[counter] = maxLabel;
         outputTensorOccluded[counter] = isOccluded;
         outputTensorInvalid[counter] = (uint32_t)grid.isInvalid(x, y, z);
-        counter = counter + 1;
+
+        ++counter;
       }
     }
   }
@@ -310,16 +323,23 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
     std::unordered_set<uint16_t> dynamic_labels{252, 253, 254, 255, 256, 257, 258, 259};
 
     int32_t counter = 0;
+    int32_t occ_counter = 0;
+    int32_t moving_counter = 0;
     for (uint32_t x = 0; x < Nx; ++x) {
       for (uint32_t y = 0; y < Ny; ++y) {
         for (uint32_t z = 0; z < Nz; ++z) {
-          
+
           const auto idx = grid.index(x, y, z);
 
           const int32_t occlusion_index = grid.getOcclusion(idx);
           if (occlusion_index >= 0) {
+            ++occ_counter;
             assert(occlusion_index < numElements);
-            const uint16_t occlusion_label = outputLabels[occlusion_index];
+            const uint16_t occlusion_label = labels_indexed[occlusion_index];
+
+            if (occlusion_label >= 252) {
+              ++moving_counter;
+            }
 
             outputTensorDynamicOcclusions[counter] =
                 static_cast<uint32_t>(dynamic_labels.find(occlusion_label) != dynamic_labels.end());
@@ -330,6 +350,10 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
         }
       }
     }
+
+    std::cout <<"#occlusions: " << occ_counter << std::endl;
+    std::cout <<"#moving: " << moving_counter << std::endl;
+    std::cout <<"#moving global: " << moving_counter_global << std::endl;
 
     // for input we just generate the ".bin" file.
     {
@@ -349,6 +373,15 @@ void saveVoxelGrid(const VoxelGrid& grid, const std::string& directory, const st
       out.write((const char*)&packed[0], packed.size() * sizeof(uint8_t));
       out.close();
     }
+
+//    {
+//      std::string output_filename = directory + "/" + basename + ".occluded_single";
+//
+//      std::ofstream out(output_filename.c_str());
+//      std::vector<uint8_t> packed = pack(outputTensorOccluded);
+//      out.write((const char*)&packed[0], packed.size() * sizeof(uint8_t));
+//      out.close();
+//    }
   }
 }
 

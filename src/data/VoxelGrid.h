@@ -27,6 +27,8 @@ class VoxelGrid {
   using PointMap = std::unordered_map<uint32_t, std::vector<PointLabel>>;
   using TransformMap = std::unordered_map<uint32_t, Eigen::Matrix4f>;
 
+  bool verbose_ = false;
+
   class Voxel {
    public:
     std::map<uint32_t, uint32_t> labels;
@@ -69,7 +71,7 @@ class VoxelGrid {
   void updateInvalid(const Eigen::Vector3f& position);
 
   /** \brief fill occluded areas with labels. **/
-  void insertOcclusionLabels();
+  //void insertOcclusionLabels();
 
   /** \brief get if voxel at (i,j,k) is occluded.
    *  Assumes that updateOcclusions has been called before,

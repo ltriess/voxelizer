@@ -56,6 +56,7 @@ int32_t main(int32_t argc, char** argv) {
   VoxelGrid priorGrid{};
   VoxelGrid pastGrid{};
   priorGrid.setDisableIgnores(true);
+  priorGrid.verbose_ = true;
 
   priorGrid.initialize(config.voxelSize, config.minExtent, config.maxExtent);
   pastGrid.initialize(config.voxelSize, config.minExtent, config.maxExtent);
@@ -115,7 +116,8 @@ int32_t main(int32_t argc, char** argv) {
       priorGrid.updateOcclusions();
       pastGrid.updateOcclusions();
 
-      priorGrid.filterAndMergePoints();
+      // unnecessary: priorGrid does not save accumulated data
+      // priorGrid.filterAndMergePoints();
       pastGrid.filterAndMergePoints();
 
 //      std::cout << "update occlusions took " << Stopwatch::toc() << std::endl;

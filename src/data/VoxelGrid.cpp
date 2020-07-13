@@ -74,6 +74,13 @@ void VoxelGrid::insert(const Eigen::Vector4f& p, uint32_t label, uint32_t scan_i
   }
 
   // float n = voxels_[gidx].count;
+
+//  if (verbose_) {
+//    if (label >= 252) {
+//      std::cout << "inserting moving" << std::endl;
+//    }
+//  }
+
   voxels_[gidx].labels[label] += 1;  //(1. / (n + 1)) * (n * voxels_[gidx].point + p);
   voxels_[gidx].count += 1;
   occlusionsValid_ = false;
@@ -173,28 +180,28 @@ bool VoxelGrid::isInvalid(int32_t i, int32_t j, int32_t k) const {
   return (invalid_[index(i, j, k)] > -1) && (invalid_[index(i, j, k)] != index(i, j, k));
 }
 
-void VoxelGrid::insertOcclusionLabels() {
-  if (!occlusionsValid_) updateOcclusions();
-
-  for (uint32_t i = 0; i < sizex_; ++i) {
-    for (uint32_t j = 0; j < sizey_; ++j) {
-      for (uint32_t k = 0; k < sizez_; ++k) {
-        // heuristic: find label from above.
-        if (occlusions_[index(i, j, k)] != index(i, j, k)) {
-          int32_t n = 1;
-          while ((k + n < sizez_) && isOccluded(i, j, k + n) && voxels_[index(i, j, k + n)].count == 0) n += 1;
-          if (k + n < sizez_ && voxels_[index(i, j, k + n)].count > 0) {
-            int32_t gidx = index(i, j, k);
-            if (voxels_[gidx].count == 0) occupied_.push_back(gidx);
-
-            voxels_[gidx].count = voxels_[index(i, j, k + n)].count;
-            voxels_[gidx].labels = voxels_[index(i, j, k + n)].labels;
-          }
-        }
-      }
-    }
-  }
-}
+//void VoxelGrid::insertOcclusionLabels() {
+//  if (!occlusionsValid_) updateOcclusions();
+//
+//  for (uint32_t i = 0; i < sizex_; ++i) {
+//    for (uint32_t j = 0; j < sizey_; ++j) {
+//      for (uint32_t k = 0; k < sizez_; ++k) {
+//        // heuristic: find label from above.
+//        if (occlusions_[index(i, j, k)] != index(i, j, k)) {
+//          int32_t n = 1;
+//          while ((k + n < sizez_) && isOccluded(i, j, k + n) && voxels_[index(i, j, k + n)].count == 0) n += 1;
+//          if (k + n < sizez_ && voxels_[index(i, j, k + n)].count > 0) {
+//            int32_t gidx = index(i, j, k);
+//            if (voxels_[gidx].count == 0) occupied_.push_back(gidx);
+//
+//            voxels_[gidx].count = voxels_[index(i, j, k + n)].count;
+//            voxels_[gidx].labels = voxels_[index(i, j, k + n)].labels;
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
 
 void VoxelGrid::updateOcclusions() {
   std::fill(occludedBy_.begin(), occludedBy_.end(), -2);
@@ -382,12 +389,16 @@ int32_t VoxelGrid::occludedBy(int32_t i, int32_t j, int32_t k, const Eigen::Vect
     if (Pos[0] < 0 || Pos[1] < 0 || Pos[2] < 0) break;
     if (Pos[0] >= int32_t(sizex_) || Pos[1] >= int32_t(sizey_) || Pos[2] >= int32_t(sizez_)) break;
 
-    int32_t idx = index(Pos[0], Pos[1], Pos[2]);
-    bool occupied = voxels_[idx].count > 0;
-    if (visited != nullptr) visited->push_back(Eigen::Vector3i(Pos[0], Pos[1], Pos[2]));
+    const int32_t idx = index(Pos[0], Pos[1], Pos[2]);
+    const bool occupied = voxels_[idx].count > 0;
+    if (visited != nullptr) {
+      visited->push_back(Eigen::Vector3i(Pos[0], Pos[1], Pos[2]));
+    }
 
     if (occupied) {
-      for (auto i : traversed) occludedBy_[i] = idx;
+      for (auto i : traversed) {
+        occludedBy_[i] = idx;
+      }
       return idx;
     }
 
@@ -407,7 +418,9 @@ int32_t VoxelGrid::occludedBy(int32_t i, int32_t j, int32_t k, const Eigen::Vect
     ++iteration;
   }
 
-  for (auto i : traversed) occludedBy_[i] = -1;
+  for (auto i : traversed) {
+    occludedBy_[i] = -1;
+  }
 
   return -1;
 }
