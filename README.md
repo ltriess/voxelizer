@@ -1,5 +1,13 @@
 # Voxelize point clouds
 
+## Quick start
+
+Run `./gen_data ../assets/semantic_kitti_dense_static.cfg <KITTI_ODOMETRY_SEQUENCE/xx> <OUTPUT_SEQUENCE_FOLDER>`
+
+Creates voxel grids, dynamic occlusion info and accumulated point clouds.
+See `saveAccumulatedPoints` in `voxelize_utils.cpp` that writes to protobufs.
+Use tfrecord converter in a second step to generate final tfrecords for training.
+
  Tool to voxelize annotated point clouds. 
  
  ![](assets/voxelizer.png)
