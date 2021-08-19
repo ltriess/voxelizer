@@ -21,12 +21,21 @@ Use tfrecord converter in a second step to generate final tfrecords for training
 * OpenGL >= 3.3
 * [glow](https://github.com/jbehley/glow) (catkin package)
 * libmatio-dev
+* protobuf == 3.4.0
  
 ## Build
   
 On Ubuntu 16.04, most of the dependencies can be installed from the package manager:
 ```bash
 sudo apt install git libeigen3-dev libboost-all-dev qtbase5-dev libglew-dev catkin libmatio-dev
+```
+
+Install protobuf 3.4.0:
+[Download the sources](https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.4.0.zip) and unpack them.
+Follow [the offical guide](https://github.com/protocolbuffers/protobuf/blob/master/src/README.md) to compile and install it.
+The version can be checked with 
+```bash
+protoc --version
 ```
 
 Use a python-2 conda env.

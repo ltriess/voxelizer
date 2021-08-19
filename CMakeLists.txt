@@ -11,7 +11,7 @@ find_package(Qt5Gui REQUIRED)
 find_package(Qt5OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem system)
-find_package(Protobuf REQUIRED)
+find_package(Protobuf 3.4.0 EXACT REQUIRED)
 
 find_package(catkin COMPONENTS 
      glow)
